@@ -1,0 +1,18 @@
+---
+
+kubernetes_version: '1.25.0-00'
+
+kubernetes_apt_release_channel: main
+
+kubernetes_apt_repository: "deb https://apt.kubernetes.io/ kubernetes-xenial {{ kubernetes_apt_release_channel }}"
+
+kubernetes_apt_ignore_key_error: false
+
+
+kubernetes_pod_network_cidr: '10.244.0.0/16'
+
+kubernetes_pod_network_cri: 'flannel'
+
+kubernetes_cri_socket: 'unix:///var/run/crio/crio.sock'
+
+kubernetes_flannel_manifest_file: https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml

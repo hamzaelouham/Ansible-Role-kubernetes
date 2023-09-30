@@ -1,0 +1,52 @@
+---
+- name: presetup containerd
+  copy:
+    content: ""
+    dest: /etc/modules-load.d/containerd.conf 
+    force: no
+    group: root
+    owner: root
+    mode: 0644  
+
+- name: Setup kernel modules (containerd)
+  lineinfile:
+    dest: /etc/modules-load.d/containerd.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+  - { regexp: 'overlay', line: 'overlay' }
+  - { regexp: 'br_netfilter', line: 'br_netfilter' }      
+
+- name: Install Docker apt key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add containerd repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+    state: present
+    update_cache: true
+- name: Install containerd
+  apt: 
+    name: containerd.io
+    update_cache: true
+    state: present 
+
+- name: Ensure containerd is initialized
+  shell: containerd config default > /etc/containerd/config.toml
+
+- name: Set containerd options
+  lineinfile:
+    path: /etc/containerd/config.toml
+    insertafter: '^(\s+)\[plugins.+\w\.runc\.options\]'
+    line: '            SystemdCgroup = true'
+  
+- name: Start containerd service
+  service:
+    name: containerd
+    state: started   
+- name: enable containerd service
+  service:
+    name: containerd
+    enabled: yes 

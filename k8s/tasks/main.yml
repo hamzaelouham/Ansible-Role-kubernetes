@@ -1,0 +1,8 @@
+---
+- include_tasks: system-setup.yml
+- include_tasks: setup-cri.yml
+- include_tasks: kube-tools.yml
+- include_tasks: kube-init.yml
+
+
+
