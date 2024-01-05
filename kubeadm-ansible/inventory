@@ -1,7 +1,7 @@
 [worker]
-20.62.166.50 
+20.62.166.5x 
 [master]
-172.203.176.220
+172.203.176.22x
 
 [worker:vars]
 ansible_password=Kworker@1234
