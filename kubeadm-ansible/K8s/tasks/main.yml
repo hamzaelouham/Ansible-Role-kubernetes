@@ -1,0 +1,6 @@
+---
+- include_tasks: containerd.yml
+
+- include_tasks: kube-requirements.yml
+
+- include_tasks: master-node.yml

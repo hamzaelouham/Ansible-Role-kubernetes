@@ -1,0 +1,4 @@
+---
+- import_playbook: kube-setup.yml
+- import_playbook: containerd.yml
+- import_playbook: init-cluster.yml

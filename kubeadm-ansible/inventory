@@ -1,0 +1,14 @@
+[worker]
+20.62.166.50 
+[master]
+172.203.176.220
+
+[worker:vars]
+ansible_password=Kworker@1234
+ansible_ssh_user=kworker1
+host_key_checking=False
+
+[master:vars]
+ansible_password=Kmaster@1234
+ansible_ssh_user=kmaster
+host_key_checking=False

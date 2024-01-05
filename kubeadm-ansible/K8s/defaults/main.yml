@@ -1,0 +1,35 @@
+---
+kube_version: '1.26'
+kube_apt_repo: "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+kube_packages:
+  - name: kubelet
+    state: present
+  - name: kubectl
+    state: present
+  - name: kubeadm
+    state: present
+  - name: kubernetes-cni
+    state: present
+
+pnc: "--pod-network-cidr=10.244.0.0/16"
+
+cri: "https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
+
+containerd_pkg: containerd.io
+
+#apt docker repo for containerd
+
+docker_apt_release_channel: stable
+
+docker_apt_arch: '{{ (ansible_architecture == "aarch64") | ternary("arm64", "amd64") }}'
+
+docker_apt_repository: "deb [arch={{ docker_apt_arch }}] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} {{ docker_apt_release_channel }}"
+
+docker_apt_gpg_key: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
+
+#yum docker repo for containerd
+docker_yum_repo_url: https://download.docker.com/linux/{{ (ansible_distribution == "Fedora") | ternary("fedora","centos") }}/docker-ce.repo
+
+docker_yum_repo_enable_nightly: '0'
+
+docker_yum_gpg_key: https://download.docker.com/linux/centos/gpg

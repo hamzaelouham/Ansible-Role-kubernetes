@@ -1,0 +1,120 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+  - name: install required dependencies 
+    apt:
+      name:
+        - apt-transport-https
+        - ca-certificates
+        - gnupg2
+        - curl
+      state: present
+    when: ansible_os_family == 'Debian'
+
+  - name: Add Docker GPG apt Key
+    apt_key:
+        url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
+        state: present  
+    when: ansible_os_family == 'Debian'
+
+  - name: Add Docker Repository
+    apt_repository:
+        repo: "deb [arch={{ (ansible_architecture == 'aarch64') | ternary('arm64', 'amd64') }}] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+        state: present      
+        update_cache: true
+    when: ansible_os_family == 'Debian'      
+
+
+  - name: Add Docker GPG key.
+    rpm_key:
+      key: "{{ docker_yum_gpg_key }}"
+      state: present
+    when: ansible_os_family == 'RedHat'
+
+  - name: Add Docker repository.
+    get_url:
+      url: "{{ docker_yum_repo_url }}"
+      dest: '/etc/yum.repos.d/docker-ce.repo'
+      owner: root
+      group: root
+      mode: 0644
+    when: ansible_os_family == 'RedHat'
+
+  - name: Configure Docker Nightly repo.
+    ini_file:
+      dest: '/etc/yum.repos.d/docker-ce.repo'
+      section: 'docker-ce-nightly'
+      option: enabled
+      value: '{{ docker_yum_repo_enable_nightly }}'
+      mode: 0644
+    when: ansible_os_family == 'RedHat'
+
+  - name: Ensure container-selinux is installed.
+    package:
+      name: container-selinux
+      state: present
+    when: ansible_os_family == 'RedHat'
+
+  - name:  installing containerd
+    package:
+      name: containerd.io
+      state: present
+
+  - name: Configure containerd.
+    file:
+        path: /etc/containerd
+        state: directory
+
+  - name: Enable containerd service, and start it.
+    systemd: 
+        name: containerd
+        state: restarted
+        enabled: yes
+        daemon-reload: yes
+
+  - name: Get defaults from containerd.
+    command: containerd config default
+    changed_when: false
+    register: containerd_config_default
+    # when: containerd_config_default_write
+
+  - name: Prepare containerd/config.toml from default config
+    copy:
+      dest: /tmp/containerd_config.toml
+      content: "{{ containerd_config_default.stdout }}"
+    # when: containerd_config_default_write
+    # changed_when: false
+
+  - name: Set Cgroup driver to systemd
+    lineinfile:
+      insertafter: '.*\[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options\]$'
+      line: '          SystemdCgroup = true'
+      state: present
+      path: /tmp/containerd_config.toml
+    # when: containerd_config_default_write and containerd_config_cgroup_driver_systemd
+    # changed_when: false
+
+  - name: Make sure  SystemdCgroup = false is not set
+    ansible.builtin.lineinfile:
+      path: /tmp/containerd_config.toml
+      state: absent
+      line: '            SystemdCgroup = false'
+      
+   
+
+  - name: Copy config.toml to /etc/containerd
+    copy:
+      remote_src: true
+      src: /tmp/containerd_config.toml
+      dest: /etc/containerd/config.toml
+    
+  - name: restart containerd
+    service:
+      name: containerd
+      state: restarted
+  - name: Cleanup temporary file
+    file:
+      path: /tmp/containerd_config.toml
+      state: absent
+    # changed_when: false
